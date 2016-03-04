@@ -8,7 +8,7 @@ import pandas as pd
 from numpy import linalg
 from numpy import dot
 
-def nmf(X, latent_features, max_iter=200, error_limit=1e-6, fit_error_limit=1e-6):
+def nmf(X, latent_features, lam, max_iter=200, error_limit=1e-6, fit_error_limit=1e-6):
     """
     Decompose X to A*Y
     """
@@ -33,23 +33,23 @@ def nmf(X, latent_features, max_iter=200, error_limit=1e-6, fit_error_limit=1e-6
     Y = linalg.lstsq(A, X)[0]
     Y = np.maximum(Y, eps)
 
-    #masked_X = mask * X
+    masked_X = mask * X
     X_est_prev = dot(A, Y)
     for i in range(1, max_iter + 1):
         # ===== updates =====
         # Matlab: A=A.*(((W.*X)*Y')./((W.*(A*Y))*Y'));
-        ###top = dot(masked_X, Y.T)
-        top = dot(X, Y.T)
-        bottom = (dot((mask * dot(A, Y)), Y.T)) + eps
+        top = dot(masked_X, Y.T)
+        ###top = dot(X, Y.T)
+        bottom = (dot((mask * dot(A, Y)), Y.T)) + lam*A + eps
         A = A * top / bottom
 
         A = np.maximum(A, eps)
         # print 'A',  np.round(A, 2)
 
         # Matlab: Y=Y.*((A'*(W.*X))./(A'*(W.*(A*Y))));
-        ###top = dot(A.T, masked_X)
-        top = dot(A.T, X)
-        bottom = dot(A.T, mask * dot(A, Y)) + eps
+        top = dot(A.T, masked_X)
+        ###top = dot(A.T, X)
+        bottom = dot(A.T, mask * dot(A, Y)) + lam*Y + eps
         Y = Y * top / bottom
         Y = np.maximum(Y, eps)
         # print 'Y', np.round(Y, 2)
